@@ -1,0 +1,45 @@
+body {
+    padding-bottom: 70px;
+    padding-top: 5rem;
+}
+
+.card {
+    padding: 10px;
+}
+
+.item {
+    padding: 5px;
+}
+
+.search-table {
+    visibility: hidden;
+    margin-top: 15px;
+}
+
+#my_div {
+    color: red;
+}
+
+@media screen and (max-width: 575px) {
+    .card-columns {
+        column-count: 1;
+    }
+}
+
+@media screen and (min-width: 576px) and (max-width: 991px) {
+    .card-columns {
+        column-count: 2;
+    }
+}
+
+@media screen and (min-width: 992px) and (max-width: 1199px) {
+    .card-columns {
+        column-count: 3;
+    }
+}
+
+@media screen and (min-width: 1200px) {
+    .card-columns {
+        column-count: 4;
+    }
+}
