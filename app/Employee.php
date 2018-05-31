@@ -46,6 +46,11 @@ class Employee extends Model
     public static function search($var)
     {
         return DB::table('employees')
+            ->join('employee_project', 'employees.id', '=', 'employee_project.employee_id')
+            ->join('projects', 'employee_project.project_id', '=', 'projects.id')
+            ->join('employee_feature', 'employees.id', '=', 'employee_feature.employee_id')
+            ->join('features', 'employee_feature.feature_id', '=', 'features.id')
+            ->select('employees.id', 'name', 'patronymic', 'surname', 'image', 'features.title AS feature_title', 'weight', 'projects.title AS project_title')
             ->where('name', 'LIKE', '%' . $var . '%')
             ->orWhere('patronymic', 'LIKE', '%' . $var . '%')
             ->orWhere('surname', 'LIKE', '%' . $var . '%')

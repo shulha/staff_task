@@ -16,41 +16,37 @@
 </head>
 
 <body>
+    <div id="app">
+        <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
+            <a class="navbar-brand" href="/">TEST Task</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-<nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
-    <a class="navbar-brand" href="/">TEST Task</a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
+            <div class="collapse navbar-collapse" id="navbarsExampleDefault">
+                <ul class="navbar-nav mr-auto">
+                    <router-link tag="li" to="/" exact class="nav-item">
+                        <a class="nav-link">Сотрудники<span class="sr-only">(current)</span></a>
+                    </router-link>
+                    <router-link tag="li" :to="{name: 'createEmployee'}" exact class="nav-item">
+                        <a class="nav-link">Создать</a>
+                    </router-link>
+                </ul>
+            </div>
+        </nav>
 
-    <div class="collapse navbar-collapse" id="navbarsExampleDefault">
-        <ul class="navbar-nav mr-auto">
-            <li class="nav-item active">
-                <a class="nav-link" href="/">Сотрудники <span class="sr-only">(current)</span></a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="{{route('create_employee')}}">Создать</a>
-            </li>
-        </ul>
+        <section class="section">
+            <div class="container">
+                <router-view name="employeesIndex"></router-view>
+                <router-view></router-view>
+            </div>
+        </section>
+
     </div>
-</nav>
 
-<main role="main" class="container">
+    <!-- Scripts -->
+    <script src="{{asset("js/bootstrap.min.js")}}"></script>
 
-    @if(Session::has('flash_message'))
-        <p class="alert alert-info">{{ Session::get('flash_message') }}</p>
-    @endif
-
-    @yield('content')
-
-</main><!-- /.container -->
-
-
-<!-- Bootstrap core JavaScript
-================================================== -->
-<script src="{{asset("js/jquery-3.2.1.min.js")}}"></script>
-<script src="{{asset("js/popper.min.js")}}"></script>
-<script src="{{asset("js/bootstrap.min.js")}}"></script>
-<script src="{{asset("js/functions.js")}}"></script>
+    <script src="{{ asset('js/app.js') }}"></script>
 </body>
 </html>

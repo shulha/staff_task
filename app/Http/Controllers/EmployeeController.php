@@ -6,6 +6,8 @@ use App\Employee;
 use App\Feature;
 use App\Project;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Input;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Validator;
 
 class EmployeeController extends Controller
@@ -13,7 +15,7 @@ class EmployeeController extends Controller
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return array
      */
     public function index()
     {
@@ -22,7 +24,18 @@ class EmployeeController extends Controller
         $arrayMean = Employee::mean();
         $mean = array_shift($arrayMean)->mean;
 
-        return view('index', compact('employees', 'mean'));
+        foreach ($employees as $employee) {
+            $emp[$employee->id]['image'] = $employee->image;
+            $emp[$employee->id]['surname'] = $employee->surname;
+            $emp[$employee->id]['name'] = $employee->name;
+            $emp[$employee->id]['patronymic'] = $employee->patronymic;
+            $emp[$employee->id]['projects'] = $employee->projects;
+            foreach ($employee->features as $item) {
+                $emp[$employee->id]['features'][$item->title] = $item->pivot->weight;
+            }
+        }
+
+        return ['employees'=>$emp, 'mean'=>$mean];
     }
 
     /**
@@ -35,48 +48,70 @@ class EmployeeController extends Controller
         $features = Feature::pluck('title', 'id');
         $projects = Project::pluck('title', 'id');
 
-        return view('create', compact('features', 'projects'));
+        return compact('features', 'projects');
     }
 
     /**
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @return Employee
      */
     public function store(Request $request)
     {
-        $this->validate($request, [
+        $input = json_decode($request->input('employee'), true);
+
+        $rules = [
             "name" => "required",
             "patronymic" => "required",
             "surname" => "required",
-            "feature_list.*" => "numeric|between:0,10",
-            "project_list.*" => "required",
-            "image" => "bail|image|mimes:jpeg,png,jpg,gif,svg|max:2048",
-        ]);
+            "weight.*" => "numeric|between:0,10",
+            "selected.*" => "required",
+        ];
 
-        $featureList = $request->input('feature_list');
-        $projectList = $request->input('project_list');
+        $validator = Validator::make($input, $rules);
+        if ($validator->fails()) {
+            return Response::json(array(
+                'success' => false,
+                'errors' => $validator->getMessageBag()->toArray()
+
+            ), 400);
+        }
+
+        $featureList = $input['weight'];
+        $projectList = $input['selected'];
 
         $timeManagerId = Feature::where('title', '=', 'Тайм менеджмент')->value('id');
         $timeManagerIdWeight = (int)$featureList[$timeManagerId];
 
         if ($timeManagerIdWeight != 10 and count($projectList) > 1) {
-            return redirect()->route('create_employee')
-                ->withErrors("«Тайм менеджмент» со значением ниже 10 не может иметь больше одного проекта")
-                ->withInput($request->input());
+            return Response::json(array(
+                'success' => false,
+                'errors' => "«Тайм менеджмент» со значением ниже 10 не может иметь больше одного проекта"
+
+            ), 400);
         }
 
-        $imageName = null;
-        if ($image = $request->file('image'))
-        {
+        $imageName = 'avatar.png';
+        $image = Input::file('image');
+        if ($image) {
+            $validator = Validator::make(
+                ["image" => $image],
+                ["image" => "image|mimes:jpeg,png,jpg,gif,svg|max:2048"]);
+            if ($validator->fails()) {
+                return Response::json(array(
+                    'success' => false,
+                    'errors' => $validator->getMessageBag()->toArray()
+
+                ), 400);
+            }
             $imageName = time() . str_random(3) . '.' . $image->getClientOriginalExtension();
             $destinationPath = public_path('/images');
             $image->move($destinationPath, $imageName);
         }
 
         /** @var Employee $employee */
-        $employee = Employee::create(array_merge($request->all(), ['image' => $imageName]));
+        $employee = Employee::create(array_merge($input, ['image' => $imageName]));
 
         $employee->projects()->sync($projectList);
 
@@ -85,10 +120,30 @@ class EmployeeController extends Controller
         }
         $employee->features()->sync($weightList);
 
-        session()->flash('flash_message', 'Your employee has been created!');
-        session()->flash('flash_message_important', true);
-
-        return redirect()->route('home');
+        return $employee;
     }
 
+    public function searchEmployee(Request $request)
+    {
+        if ($request->isMethod('post')){
+
+            $searchString = $request->input('searchString');
+            if(empty($searchString))
+                return response()->json(['success' => false], 400);
+
+            $employees = Employee::search($searchString);
+
+            foreach ($employees as $employee) {
+                $emp[$employee->id]['image'] = $employee->image;
+                $emp[$employee->id]['surname'] = $employee->surname;
+                $emp[$employee->id]['name'] = $employee->name;
+                $emp[$employee->id]['patronymic'] = $employee->patronymic;
+                $emp[$employee->id]['features'][$employee->feature_title] = $employee->weight;
+                $emp[$employee->id]['projects'][$employee->project_title] = $employee->project_title;
+            }
+            return ['employees'=>$emp];
+        }
+
+        return response()->json(['success' => false], 405);
+    }
 }
